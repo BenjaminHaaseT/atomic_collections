@@ -1,7 +1,7 @@
 #ifndef RCU_H
 #define RCU_H
-#include <stdbool.h>
-#include <stdatomic.h>
+// #include <stdbool.h>
+// #include <stdatomic.h>
 
 typedef struct {
     _Atomic unsigned int ref_count;
