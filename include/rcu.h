@@ -19,7 +19,7 @@ struct rcu_stack_node {
 };
 
 void rcu_stack_node_init(rcu_stack_node *, rcunode_t *);
-void free_rcu_stack_node(rcu_stack_node *);
+void free_rcu_stack_node(rcu_stack_node *restrict);
 
 typedef struct {
     _Atoimc unsigned int state;
@@ -31,8 +31,10 @@ typedef struct {
 } rcu_t;
 
 void rcu_init(rcu_t *, void *(*cpy)(void*));
+void rcu_init_with(rcu_t *, void *(*cpy)(void*), void *data);
 void *rcu_read(rcu_t *);
 void rcu_update(rcu_t *, void *);
+void rcu_push(rcu_t *, rcu_node_t *);
 void free_rcu(rcu_t *);
 
 #endif
