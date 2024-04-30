@@ -1,6 +1,6 @@
+#include <stdbool.h>
 #ifndef RCU_H
 #define RCU_H
-// #include <stdbool.h>
 // #include <stdatomic.h>
 
 typedef struct {
