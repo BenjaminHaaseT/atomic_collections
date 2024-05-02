@@ -4,19 +4,19 @@
 
 struct queue_node {
     void *_Atomic data;
-    struct queueu_node *_Atomic next;
+    struct queue_node *_Atomic next;
 };
 
 void queue_node_init(struct queue_node *, void *);
 void free_queue_node(struct queue_node *);
 
 struct queue_epoch_node {
-    struct queue_node *node;
+    struct queue_node *data;
     struct queue_epoch_node *next;
-}
+};
 
 void queue_epoch_node_init(struct queue_epoch_node *, struct queue_node *);
-void free_queue_epoch_node_init(struct queue_epoch_node *restrict);
+void free_queue_epoch_node(struct queue_epoch_node *restrict);
 
 typedef struct {
     _Atomic unsigned int state;
