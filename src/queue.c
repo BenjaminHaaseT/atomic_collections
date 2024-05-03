@@ -127,3 +127,16 @@ void *atm_queue_dequeue(atm_queue_t *q)
 
     return res;
 }
+
+void atm_queue_push_epoch(atm_queue_t *q, struct queue_node *node)
+{
+    // create new epoch node to add to the current epoch stack
+    struct queue_epoch_node *neo = malloc(sizeof(struct queue_epoch_node));
+    queue_epoch_node_init(neo, node);
+
+    struct queue_epoch_node *cur_stack = atomic_load_explicit(&(q->cur_epoch_stack), memory_order_relaxed);
+    neo->next = cur_stack;
+
+    while (!atomic_compare_exchange_strong_explicit(&(q->cur_epoch_stack), &cur_stack, neo, memory_order_relaxed, memory_order_relaxed))
+        neo->next = cur_stack;
+}
