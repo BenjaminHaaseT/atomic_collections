@@ -74,3 +74,56 @@ void atm_queue_enqueue(atm_queue_t *q, void *data)
         }
     }
 }
+
+void *atm_queue_dequeue(atm_queue_t *q)
+{
+    // increment state, to notify other threads data is being read 
+    atomic_add_explicit(&(q->state), 1, memory_order_relaxed);
+    void *res = NULL;
+
+    while (1)
+    {
+        // read current data held in head, this pointer will never be null
+        struct queue_node *cur_head = atomic_load_explicit(&(q->head), memory_order_acquire);
+        struct queue_node *cur_head_next atomic_load_explicit(&(cur_head->next), memory_order_relaxed);
+        if (cur_head_next == NULL)
+        {
+            // we have an empty queue, sentinel node points to NULL
+            break;
+        }
+
+        // for exchanging with the next nodes data
+        void *cur_data = atomic_exchange_explicit(&(cur_head_next->data), NULL, memory_order_relaxed);
+        if (cur_data != NULL)
+        {
+            // this thread gets to update the current head of the queue
+            res = cur_data;
+            atm_queue_push_epoch(q, cur_head);
+
+            // now update head of the queue
+            atomic_store_explicit(&(q->head), cur_head_next, memory_order_release);
+            break;
+        }       
+    }
+
+    // exit the read state
+    if (
+        atomic_sub_explicit(&(q->state), 1, memory_order_release) == 1 &&
+        !atomic_exchange_explicit(&(q->epoch_flag), true, memory_order_release)
+    )
+    {
+        // if we enter this block acquire on all previous release updates to state and epoch flag
+        atomic_thread_fence(memory_order_acquire);
+
+        struct queue_epoch_node *old_cur_epoch_stack = atomic_exchange_explicit(&(q->cur_epoch_stack), NULL, memory_order_relaxed);
+        struct queue_epoch_node *old_final_epoch_stack = atomic_exchange_explicit(&(q->final_epoch_stack), old_cur_epoch_stack, memory_order_relaxed);
+
+        // free nodes in the current epoch
+        free_queue_epoch_node(old_final_epoch_stack);
+
+        // finally reset epoch flag
+        atomic_store_explicit(&(q->epoch_flag), false, memory_order_release);
+    }
+
+    return res;
+}
