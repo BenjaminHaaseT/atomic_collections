@@ -5,7 +5,6 @@
 
 #include "queue.h"
 
-
 void queue_node_init(struct queue_node *node, void *data)
 {
     atomic_store_explicit(&(node->data), data, memory_order_relaxed);
@@ -78,14 +77,14 @@ void atm_queue_enqueue(atm_queue_t *q, void *data)
 void *atm_queue_dequeue(atm_queue_t *q)
 {
     // increment state, to notify other threads data is being read 
-    atomic_add_explicit(&(q->state), 1, memory_order_relaxed);
+    atomic_fetch_add_explicit(&(q->state), 1, memory_order_relaxed);
     void *res = NULL;
 
     while (1)
     {
         // read current data held in head, this pointer will never be null
         struct queue_node *cur_head = atomic_load_explicit(&(q->head), memory_order_acquire);
-        struct queue_node *cur_head_next atomic_load_explicit(&(cur_head->next), memory_order_relaxed);
+        struct queue_node *cur_head_next = atomic_load_explicit(&(cur_head->next), memory_order_relaxed);
         if (cur_head_next == NULL)
         {
             // we have an empty queue, sentinel node points to NULL
@@ -108,7 +107,7 @@ void *atm_queue_dequeue(atm_queue_t *q)
 
     // exit the read state
     if (
-        atomic_sub_explicit(&(q->state), 1, memory_order_release) == 1 &&
+        atomic_fetch_sub_explicit(&(q->state), 1, memory_order_release) == 1 &&
         !atomic_exchange_explicit(&(q->epoch_flag), true, memory_order_release)
     )
     {
