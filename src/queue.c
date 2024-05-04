@@ -140,3 +140,21 @@ void atm_queue_push_epoch(atm_queue_t *q, struct queue_node *node)
     while (!atomic_compare_exchange_strong_explicit(&(q->cur_epoch_stack), &cur_stack, neo, memory_order_relaxed, memory_order_relaxed))
         neo->next = cur_stack;
 }
+
+void free_atm_queue(atm_queue_t *q)
+{
+    struct queue_epoch_node *old_final_epoch_stack = atomic_exchange_explicit(&(q->final_epoch_stack), NULL, memory_order_relaxed);
+    free_queue_epoch_node(old_final_epoch_stack);
+    struct queue_epoch_node *old_cur_epoch_stack = atomic_exchange_explicit(&(q->cur_epoch_stack), NULL, memory_order_relaxed);
+    free_queue_epoch_node(old_cur_epoch_stack);
+
+    struct queue_node *cur = atomic_load_explicit(&(q->head), memory_order_relaxed);
+    while (cur)
+    {
+        struct queue_node *temp = atomic_load_explicit(&(cur->next), memory_order_relaxed);
+        free_queue_node(cur);
+        cur = temp;
+    }
+
+    free(q);
+}
