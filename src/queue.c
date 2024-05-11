@@ -42,7 +42,7 @@ void free_queue_epoch_node(struct queue_epoch_node *restrict node)
     }
 }
 
-void atm_queue_init(atm_queue_t *q)
+void atm_queue_init(atm_queue *q)
 {
     q->state = 0;
     q->epoch_flag = false;
@@ -54,7 +54,7 @@ void atm_queue_init(atm_queue_t *q)
     q->final_epoch_stack = NULL;
 }
 
-void atm_queue_enqueue(atm_queue_t *q, void *data)
+void atm_queue_enqueue(atm_queue *q, void *data)
 {
     // create new node for the queue
     struct queue_node *neo = malloc(sizeof(struct queue_node));
@@ -74,7 +74,7 @@ void atm_queue_enqueue(atm_queue_t *q, void *data)
     }
 }
 
-void *atm_queue_dequeue(atm_queue_t *q)
+void *atm_queue_dequeue(atm_queue *q)
 {
     // increment state, to notify other threads data is being read 
     atomic_fetch_add_explicit(&(q->state), 1, memory_order_relaxed);
@@ -127,7 +127,7 @@ void *atm_queue_dequeue(atm_queue_t *q)
     return res;
 }
 
-void atm_queue_push_epoch(atm_queue_t *q, struct queue_node *node)
+void atm_queue_push_epoch(atm_queue *q, struct queue_node *node)
 {
     // create new epoch node to add to the current epoch stack
     struct queue_epoch_node *neo = malloc(sizeof(struct queue_epoch_node));
@@ -140,7 +140,7 @@ void atm_queue_push_epoch(atm_queue_t *q, struct queue_node *node)
         neo->next = cur_stack;
 }
 
-void free_atm_queue(atm_queue_t *q)
+void free_atm_queue(atm_queue *q)
 {
     struct queue_epoch_node *old_final_epoch_stack = atomic_exchange_explicit(&(q->final_epoch_stack), NULL, memory_order_relaxed);
     free_queue_epoch_node(old_final_epoch_stack);
@@ -158,7 +158,7 @@ void free_atm_queue(atm_queue_t *q)
     free(q);
 }
 
-void free_atm_queue_auto(atm_queue_t *q)
+void free_atm_queue_auto(atm_queue *q)
 {
     struct queue_epoch_node *old_final_epoch_stack = atomic_exchange_explicit(&(q->final_epoch_stack), NULL, memory_order_relaxed);
     free_queue_epoch_node(old_final_epoch_stack);

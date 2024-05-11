@@ -25,13 +25,13 @@ typedef struct {
     struct queue_node *_Atomic tail;
     struct queue_epoch_node *_Atomic cur_epoch_stack;
     struct queue_epoch_node *_Atomic final_epoch_stack;
-} atm_queue_t;
+} atm_queue;
 
-void atm_queue_init(atm_queue_t *);
-void *atm_queue_dequeue(atm_queue_t *);
-void atm_queue_enqueue(atm_queue_t *, void *);
-void atm_queue_push_epoch(atm_queue_t *, struct queue_node *);
-void free_atm_queue(atm_queue_t *);
-void free_atm_queue_auto(atm_queue_t *);
+void atm_queue_init(atm_queue *);
+void *atm_queue_dequeue(atm_queue *);
+void atm_queue_enqueue(atm_queue *, void *);
+void atm_queue_push_epoch(atm_queue *, struct queue_node *);
+void free_atm_queue(atm_queue *);
+void free_atm_queue_auto(atm_queue *);
 
 #endif
