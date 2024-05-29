@@ -21,10 +21,10 @@ build: $(OBJFILES)
 
 build_test: $(TESTBINFILES)
 
-$(TESTBIN)/%_test:$(TESTSRC)/%_test.c $(OBJ)/%.o
+$(TESTBIN)/%_test: $(TESTSRC)/%_test.c $(OBJ)/%.o
 	$(CC) -o $@ $^ -I$(INCDIR) -Wall -Werror 
 
-$(OBJ)/%.o:$(SRC)/%.c
+$(OBJ)/%.o: $(SRC)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:

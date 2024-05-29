@@ -61,6 +61,7 @@ void *single_producer_thread_body(void *args)
         atm_queue_enqueue(ptr->q, val);
     }
 
+    printf("Single producer thread %d finished.\n", id);
     return NULL;
 }
 
@@ -210,6 +211,8 @@ void *multi_consumer_thread_body(void *args)
     _Atomic unsigned *total_producer_vals = argsp->total_producer_vals;
     int id = argsp->id;
 
+    printf("Multi consumer %d executing...\n", id);
+
     unsigned total = 0;
     unsigned total_non_empty = 0;
     unsigned total_empty = 0;
@@ -238,9 +241,11 @@ void *multi_consumer_thread_body(void *args)
 
         total++;
     }
+    
+    printf("Multi consumer %d finished enqueueing values\n", id);
 
     // Finish dequeing values until we have reached the total
-    while (atomic_load_explicit(total_producer_vals) < nproducer_vals)
+    while (atomic_load_explicit(total_producer_vals, memory_order_relaxed) < nproducer_vals)
     {
         int *dequeue_val = atm_queue_dequeue(q);
         if (dequeue_val != NULL)
@@ -289,8 +294,8 @@ int test_queue_multi_threaded_multi_producer_multi_consumer(unsigned int niter)
     // Initialize thread arguments
     _Atomic unsigned total_produced = 0;
     consumer_args[0] = (struct multi_consumer_args) { .q=&q, .niter=niter, .nproducer_vals=7*niter, .total_producer_vals=&total_produced, .id=0 };
-    consumer_args[0] = (struct multi_consumer_args) { .q=&q, .niter=niter, .nproducer_vals=7*niter, .total_producer_vals=&total_produced, .id=1 };
-    consumer_args[0] = (struct multi_consumer_args) { .q=&q, .niter=niter, .nproducer_vals=7*niter, .total_producer_vals=&total_produced, .id=2 };
+    consumer_args[1] = (struct multi_consumer_args) { .q=&q, .niter=niter, .nproducer_vals=7*niter, .total_producer_vals=&total_produced, .id=1 };
+    consumer_args[2] = (struct multi_consumer_args) { .q=&q, .niter=niter, .nproducer_vals=7*niter, .total_producer_vals=&total_produced, .id=2 };
 
     producer_args[0] = (struct single_producer_args) { .q=&q, .niter=niter, .id=3 };
     producer_args[1] = (struct single_producer_args) { .q=&q, .niter=niter, .id=4 };
@@ -351,6 +356,9 @@ int main(void)
         return 1;
 
     if (test_queue_multi_threaded_multi_producer_single_consumer(1000))
+        return 1;
+
+    if (test_queue_multi_threaded_multi_producer_multi_consumer(1000000))
         return 1;
     
     return 0;
